@@ -59,14 +59,29 @@ Copyright (c) .NET Foundation. All rights reserved.
     
     <!-- if any reference depends on netstandard and it is not inbox, add references and implementation assemblies for netstandard2.0  -->
     <ItemGroup Condition="'$(DependsOnNETStandard)' == 'true' AND '$(NETStandardInbox)' != 'true'">
-      <_NETStandardLibraryNETFrameworkLib Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '4.7'"
-                                          Include="$(MSBuildThisFileDirectory)\net47\lib\*.dll" />
-      <_NETStandardLibraryNETFrameworkLib Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '4.6.2'"
-                                          Include="$(MSBuildThisFileDirectory)\net462\lib\*.dll"
-                                          Exclude="@(_NETStandardLibraryNETFrameworkLib->'$(MSBuildThisFileDirectory)\net462\lib\%(FileName).dll')" />
-      <_NETStandardLibraryNETFrameworkLib Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '4.6.1'"
-                                          Include="$(MSBuildThisFileDirectory)\net461\lib\*.dll"
-                                          Exclude="@(_NETStandardLibraryNETFrameworkLib->'$(MSBuildThisFileDirectory)\net461\lib\%(FileName).dll')" />
+      <_NETStandardLibraryNETFrameworkLib47Name Include="#NSNETFX47FILENAMES#">
+        <Folder>net47</Folder>
+      </_NETStandardLibraryNETFrameworkLib47Name>
+      <_NETStandardLibraryNETFrameworkLib462Name Include="#NSNETFX462FILENAMES#">
+        <Folder>net462</Folder>
+      </_NETStandardLibraryNETFrameworkLib462Name>
+      <_NETStandardLibraryNETFrameworkLib461Name Include="#NSNETFX461FILENAMES#">
+        <Folder>net461</Folder>
+      </_NETStandardLibraryNETFrameworkLib461Name>
+      <_NETStandardLibraryNETFrameworkLib461Name Include="netfx.force.conflicts">
+        <Folder>net461</Folder>
+        <!-- netfx.force.conflicts is only needed at compile time. -->
+        <Private>false</Private>
+      </_NETStandardLibraryNETFrameworkLib461Name>
+    
+      <_NETStandardLibraryNETFrameworkLibName Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '4.7'"
+                                              Include="@(_NETStandardLibraryNETFrameworkLib47Name)" />
+      <_NETStandardLibraryNETFrameworkLibName Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '4.6.2'"
+                                          Include="@(_NETStandardLibraryNETFrameworkLib462Name)"
+                                          Exclude="@(_NETStandardLibraryNETFrameworkLibName)" />
+      <_NETStandardLibraryNETFrameworkLibName Condition="'$(_TargetFrameworkVersionWithoutV)' &gt;= '4.6.1'"
+                                          Include="@(_NETStandardLibraryNETFrameworkLib461Name)"
+                                          Exclude="@(_NETStandardLibraryNETFrameworkLibName)" />
 
       <!-- Remove simple name references if we're directly providing a reference assembly to the compiler. For example,
            consider a project with a Reference Include="System.Net.Http" or "System.IO.Compression", which are both in 
@@ -74,12 +89,9 @@ Copyright (c) .NET Foundation. All rights reserved.
            Simple references can also come from NuGet framework assemblies, hence this statement should occur after
            including all computed references, thus this target is scheduled after references have been raised by NuGet
            targets. -->
-      <Reference Remove="%(_NETStandardLibraryNETFrameworkLib.FileName)" />
+      <Reference Remove="@(_NETStandardLibraryNETFrameworkLibName)" />
 
-      <Reference Include="@(_NETStandardLibraryNETFrameworkLib)">
-        <!-- netfx.force.conflicts is only needed at compile time. -->
-        <Private Condition="'%(FileName)' == 'netfx.force.conflicts'">false</Private>
-      </Reference>
+      <Reference Include="@(_NETStandardLibraryNETFrameworkLibName->'$(MSBuildThisFileDirectory)\%(Folder)\lib\%(Identity).dll')" />
     </ItemGroup>
   </Target>
 </Project>

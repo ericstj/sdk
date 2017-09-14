@@ -18,6 +18,8 @@
     <EnableDefaultItems>false</EnableDefaultItems>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <DefineConstants>$(DefineConstants);EXTENSIONS</DefineConstants>
+    <NETStandardLibraryNetFrameworkPath>$(NUGET_PACKAGES)\NETStandard.Library.NETFramework\$(NETStandardLibraryNETFrameworkVersion)\build</NETStandardLibraryNetFrameworkPath>
+    <NSNetFxTargetsTemplate>msbuildExtensions\Microsoft\Microsoft.NET.Build.Extensions\Microsoft.NET.Build.Extensions.NETFramework.targets</NSNetFxTargetsTemplate>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -41,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="msbuildExtensions\**\*" PackagePath="msbuildExtensions\" />
+    <None Include="msbuildExtensions\**\*" Exclude="$(NSNetFxTargetsTemplate)" PackagePath="msbuildExtensions\" />
     <None Include="msbuildExtensions-ver\**\*" PackagePath="msbuildExtensions-ver\" />
     <Compile Include="**\*.cs" />
     <Compile Include="..\Common\src\**\*.cs">
@@ -65,14 +67,11 @@
   </ItemGroup>
 
   <Target Name="PrepareAdditionalFilesToLayout" BeforeTargets="AssignTargetPaths">
-    <PropertyGroup>
-      <_netstandardLibraryNetFrameworkPath>$(NUGET_PACKAGES)\NETStandard.Library.NETFramework\$(NETStandardLibraryNETFrameworkVersion)\build</_netstandardLibraryNetFrameworkPath>
-    </PropertyGroup>
     <ItemGroup>
       <LayoutFile Include="@(None)" Condition="'%(None.PackagePath)' != ''">
         <TargetPath>%(None.PackagePath)\%(None.RecursiveDir)%(None.Filename)%(None.Extension)</TargetPath>
       </LayoutFile>
-      <NetStandardNetFxFile Include="$(_netstandardLibraryNetFrameworkPath)\**\*" Exclude="$(_netstandardLibraryNetFrameworkPath)\**\*.props;$(_netstandardLibraryNetFrameworkPath)\**\*.targets" />
+      <NetStandardNetFxFile Include="$(NETStandardLibraryNetFrameworkPath)\**\*" Exclude="$(NETStandardLibraryNetFrameworkPath)\**\*.props;$(NETStandardLibraryNetFrameworkPath)\**\*.targets" />
       <LayoutFile Include="@(NetStandardNetFxFile)">
         <TargetPath>msbuildExtensions\Microsoft\Microsoft.NET.Build.Extensions\%(NetStandardNetFxFile.RecursiveDir)%(NetStandardNetFxFile.FileName)%(NetStandardNetFxFile.Extension)</TargetPath>
       </LayoutFile>
@@ -85,7 +84,30 @@
     </Copy>
   </Target>
 
-  <Target Name="PackLayout" DependsOnTargets="CopyAdditionalFilesToLayout" BeforeTargets="$(GenerateNuspecDependsOn)">
+  <ItemGroup>
+    <_net47Files Include="$(NETStandardLibraryNetFrameworkPath)\net47\lib\*.dll" />
+    <_net462Files Include="$(NETStandardLibraryNetFrameworkPath)\net462\lib\*.dll" />
+    <_net461Files Include="$(NETStandardLibraryNetFrameworkPath)\net461\lib\*.dll" />
+  </ItemGroup>
+  <Target Name="StampNSNetFxFileListInTargets" 
+          Condition="'$(TargetFramework)' == ''" 
+          AfterTargets="Build" 
+          Inputs="$(NSNetFxTargetsTemplate);@(_net47Files);@(_net462Files);@(_net461Files);$(MSBuildProjectFile)" 
+          Outputs="$(PackageLayoutOutputPath)\$(NSNetFxTargetsTemplate)">
+    <PropertyGroup>
+      <_net47FileNames>@(_net47Files->'%(FileName)')</_net47FileNames>
+      <_net462FileNames>@(_net462Files->'%(FileName)')</_net462FileNames>
+      <_net461FileNames>@(_net461Files->'%(FileName)')</_net461FileNames>
+    </PropertyGroup>
+    <Error Condition="'$(_net47FileNames)' == '' OR '$(_net462FileNames)' == '' OR '$(_net461FileNames)' == ''" Text="Could not determine file list from NETStandard.Library.NETFramework." />
+
+    <WriteLinesToFile File="$(PackageLayoutOutputPath)\$(NSNetFxTargetsTemplate)"
+                      Lines="$([System.IO.File]::ReadAllText('$(NSNetFxTargetsTemplate)').Replace('#NSNETFX47FILENAMES#', '$(_net47FileNames)').Replace('#NSNETFX462FILENAMES#', '$(_net462FileNames)').Replace('#NSNETFX461FILENAMES#', '$(_net461FileNames)'))"
+                      Overwrite="true" />
+    
+  </Target>
+
+  <Target Name="PackLayout" DependsOnTargets="CopyAdditionalFilesToLayout;StampNSNetFxFileListInTargets" BeforeTargets="$(GenerateNuspecDependsOn)">
     <ItemGroup>
       <Content Include="$(PackageLayoutOutputPath)**\*" Exclude="$(PackageLayoutOutputPath)**\*.pdb" PackagePath="\" />
     </ItemGroup>
