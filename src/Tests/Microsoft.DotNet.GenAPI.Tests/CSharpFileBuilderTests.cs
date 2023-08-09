@@ -236,6 +236,10 @@ namespace Microsoft.DotNet.GenAPI.Tests
                         public RecordClassWithConstructors() : this(1) { }
                         public RecordClassWithConstructors(string s) : this(int.Parse(s)) { }
                     }
+                    public record RecordWithPrivateDefaultConstructor
+                    {
+                        private RecordWithPrivateDefaultConstructor() { }
+                    }
                 }
                 """,
                 expected: """
@@ -294,6 +298,11 @@ namespace Microsoft.DotNet.GenAPI.Tests
                         public int AddIinit { get { throw null; } init { } }
 
                         public int AddIro { get { throw null; } }
+                    }
+                
+                    public record RecordWithPrivateDefaultConstructor
+                    {
+                        private RecordWithPrivateDefaultConstructor() { }
                     }
                 }
                 """);

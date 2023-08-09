@@ -201,6 +201,12 @@ namespace Microsoft.DotNet.GenAPI
                 yield break;
             }
 
+            // records only need a private default consturctor if explicitly defined
+            if (namedType.IsRecord && !namedType.InstanceConstructors.Any(c => c.Parameters.IsEmpty && !symbolFilter.Include(c)))
+            {
+                yield break;                
+            }
+
             // Nothing to do if type already exposes constructor, or has an excluded implicit constructor (since it would match visibility)
             if (namedType.InstanceConstructors.Any(c => symbolFilter.Include(c) || c.IsImplicitlyDeclared))
             {
