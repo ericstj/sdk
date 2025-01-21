@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Microsoft.DotNet.ApiCompat.Tool": {
+      "commandName": "Project",
+      "commandLineArgs": "-l \"C:\\Program Files\\dotnet\\packs\\Microsoft.WindowsDesktop.App.Ref\\9.0.1\\ref\\net9.0\\System.Security.Permissions.dll\" --lref \"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\9.0.1\\ref\\net9.0\" -r \"C:\\Program Files\\dotnet\\shared\\Microsoft.WindowsDesktop.App\\9.0.1\\System.Security.Permissions.dll\" --rref \"C:\\Program Files\\dotnet\\packs\\Microsoft.NETCore.App.Ref\\9.0.1\\ref\\net9.0\"",
+      "workingDirectory": "C:\\scratch\\apicompatSample"
+    }
+  }
+}

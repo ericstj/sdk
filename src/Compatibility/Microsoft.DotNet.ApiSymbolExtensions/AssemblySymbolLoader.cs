@@ -63,8 +63,27 @@ namespace Microsoft.DotNet.ApiSymbolExtensions
             _loadedAssemblies = [];
             CSharpCompilationOptions compilationOptions = new(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable,
                 metadataImportOptions: includeInternalSymbols ? MetadataImportOptions.Internal : MetadataImportOptions.Public);
+            compilationOptions = compilationOptions.WithMetadataReferenceResolver(new WarnOnMissingReferenceResolver(log));
             _cSharpCompilation = CSharpCompilation.Create($"AssemblyLoader_{DateTime.Now:MM_dd_yy_HH_mm_ss_FFF}", options: compilationOptions);
             _resolveReferences = resolveAssemblyReferences;
+        }
+
+        private class WarnOnMissingReferenceResolver(ILog log) : MetadataReferenceResolver
+        {
+            private ILog _log = log;
+            public override bool Equals(object? other) => object.Equals(this, other);
+            public override int GetHashCode() => 0;
+            public override ImmutableArray<PortableExecutableReference> ResolveReference(string reference, string? baseFilePath, MetadataReferenceProperties properties) => ImmutableArray<PortableExecutableReference>.Empty;
+
+            public override PortableExecutableReference? ResolveMissingAssembly(MetadataReference definition, AssemblyIdentity referenceIdentity)
+            {
+                _log.LogWarning(AssemblyReferenceNotFoundErrorCode,
+                    string.Format(Resources.CouldNotResolveReference, referenceIdentity.ToString(), definition.Display));
+
+                return null;
+            }
+
+            public override bool ResolveMissingAssemblies => true;
         }
 
         /// <inheritdoc />
@@ -420,8 +439,7 @@ namespace Microsoft.DotNet.ApiSymbolExtensions
 
                     if (!found)
                     {
-                        _log.LogWarning(AssemblyReferenceNotFoundErrorCode,
-                            string.Format(Resources.CouldNotResolveReference, assemblyReferenceName, rootAssemblyDisplayString));
+                        _log.LogMessage(string.Format(Resources.CouldNotResolveReference, assemblyReferenceName, rootAssemblyDisplayString));
                     }
                 }
             }
