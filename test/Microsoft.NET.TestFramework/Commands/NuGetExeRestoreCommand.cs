@@ -58,12 +58,17 @@ namespace Microsoft.NET.TestFramework.Commands
                     "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" :
                     $"https://dist.nuget.org/win-x86-commandline/v{NuGetExeVersion}/nuget.exe";
 
-                using (var client = new System.Net.Http.HttpClient())
-                using (var response = client.GetAsync(url).ConfigureAwait(false).GetAwaiter().GetResult())
-                using (var fs = new FileStream(nugetExePath, FileMode.CreateNew))
+                Task downloadTask = Task.Run(async () =>
                 {
-                    response.Content.CopyToAsync(fs).ConfigureAwait(false).GetAwaiter().GetResult();
-                }
+                    using (System.Net.Http.HttpClient client = new System.Net.Http.HttpClient())
+                    using (System.Net.Http.HttpResponseMessage response = await client.GetAsync(url).ConfigureAwait(false))
+                    using (FileStream fs = new FileStream(nugetExePath, FileMode.CreateNew))
+                    {
+                        await response.Content.CopyToAsync(fs).ConfigureAwait(false);
+                    }
+                });
+
+                Task.WaitAll(downloadTask);
             }
 
             var ret = new SdkCommandSpec()
