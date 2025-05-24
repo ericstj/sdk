@@ -132,7 +132,7 @@ public static class Program
         rootCommand.Options.Add(optionAddPartialModifier);
         rootCommand.Options.Add(optionAttachDebugger);
 
-        rootCommand.SetAction(async (ParseResult result) =>
+        rootCommand.SetAction(async (ParseResult result, CancellationToken _) =>
         {
             try
             {
